@@ -40,7 +40,7 @@ porttidy scan --json
 ## Install From Source
 
 ```bash
-go install github.com/iiwish/porttidy/cmd/porttidy@latest
+go install github.com/iiwish/porttidy/cmd/porttidy@v0.1.0-alpha.1
 ```
 
 For local development:
@@ -50,6 +50,15 @@ git clone https://github.com/iiwish/porttidy.git
 cd porttidy
 make install
 ```
+
+## Alpha Release Boundary
+
+`v0.1.0-alpha.1` is macOS-first. It is suitable for developers who want to test policy-aware cleanup in their own AI coding workflow, but it is not a general-purpose process manager and not yet a cross-platform tool.
+
+The supported release assets are:
+
+- `porttidy-darwin-arm64`
+- `porttidy-darwin-amd64`
 
 ## Product Direction
 

@@ -1,4 +1,4 @@
-.PHONY: all build test install clean dev build-all
+.PHONY: all build test install clean dev build-darwin build-all
 
 BINARY := porttidy
 CMD := ./cmd/porttidy
@@ -23,6 +23,11 @@ clean:
 	go clean
 
 # Cross-compilation
+build-darwin:
+	mkdir -p dist
+	GOOS=darwin GOARCH=arm64 go build -o dist/porttidy-darwin-arm64 $(CMD)
+	GOOS=darwin GOARCH=amd64 go build -o dist/porttidy-darwin-amd64 $(CMD)
+
 build-all:
 	mkdir -p dist
 	GOOS=darwin  GOARCH=arm64 go build -o dist/porttidy-darwin-arm64 $(CMD)

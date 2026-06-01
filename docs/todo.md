@@ -40,6 +40,7 @@
 - [x] Remove `.DS_Store` from source control.
 - [x] Add focused tests before v0.1 release.
 - [x] Add install instructions only after the safety contract is implemented.
+- [x] Add changelog and basic GitHub Actions CI.
 - [ ] Prepare Homebrew only after repeat usage validates the CLI.
 
 ## Deferred
@@ -60,7 +61,7 @@ Before calling v0.1 ready:
 
 - [ ] `porttidy scan` does not list Codex helper processes as dev cleanup candidates.
 - [x] `porttidy kill --orphan --force` cannot kill editor, terminal, browser, Codex, Docker, or system helpers.
-- [ ] Orphan dev servers are detected through a Go-based integration fixture.
-- [ ] Non-orphan dev servers are visible but not force-cleanup targets by default.
+- [x] Orphan dev servers are detected through a Go-based integration fixture.
+- [x] Non-orphan dev servers are visible but not force-cleanup targets by default.
 - [x] JSON output explains why each process was matched or blocked.
-- [ ] `go test ./...` passes.
+- [x] `go test ./...` passes.

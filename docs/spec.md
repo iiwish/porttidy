@@ -2,7 +2,7 @@
 
 > Status: v0.1 product contract  
 > Scope: macOS-first CLI for policy-aware cleanup of abandoned local dev servers  
-> Last updated: 2026-05-31
+> Last updated: 2026-06-01
 
 ## 1. Product Thesis
 
@@ -437,13 +437,13 @@ Acceptance criteria:
 - Windows support.
 - Docker cleanup.
 
-## 16. Current Implementation Gaps
+## 16. Current Alpha Boundary
 
-Known gaps in the current alpha:
+The current alpha is releasable for macOS-first manual adoption, but its boundary should stay tight:
 
-- Termination re-checks self/parent, system-process flags, `can_force_cleanup`, `safety_level`, and current cwd containment before signaling.
+- Termination re-checks self/parent, system-process flags, `can_force_cleanup`, `safety_level`, `cleanup_decision`, and current cwd containment before signaling.
 - `kill --all` is guarded, but it still exists as an expert escape hatch and should stay out of onboarding docs.
-- The default signature list should be validated against more real AI-agent sessions before v0.1 is tagged.
+- The default signature list should be validated against more real AI-agent sessions before a stable release.
 - Homebrew and shell completion remain deferred until repeat usage proves the CLI shape.
 
-These gaps should be fixed before treating v0.1 as releasable.
+Do not expand scope until real usage shows whether the cleanup decision model is trusted.
