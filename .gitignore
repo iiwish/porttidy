@@ -1,0 +1,9 @@
+.DS_Store
+
+# Build artifacts
+/porttidy
+/dist/
+
+# Test and coverage output
+*.test
+coverage.out
