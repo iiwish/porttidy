@@ -193,6 +193,97 @@ func TestClassifyProcessSafetyLevels(t *testing.T) {
 	}
 }
 
+func TestClassifyProcessUserPolicy(t *testing.T) {
+	s := New(&config.Config{
+		TargetDirs:     []string{"/Users/me/self"},
+		IgnoreDirs:     []string{"/Users/me/self/ignored"},
+		DevSignatures:  config.DefaultDevSignatures,
+		UserSignatures: []string{"air", "go run ./cmd/server"},
+		Denylist:       config.DefaultDenylist,
+	})
+
+	tests := []struct {
+		name         string
+		process      model.Process
+		wantDecision string
+		wantCanForce bool
+		wantIsDev    bool
+	}{
+		{
+			name: "user signature can create auto cleanup candidate",
+			process: model.Process{
+				PID:      2001,
+				PPID:     1,
+				Name:     "air",
+				Cmdline:  "air -c .air.toml",
+				CWD:      "/Users/me/self/app",
+				IsOrphan: true,
+			},
+			wantDecision: model.CleanupAuto,
+			wantCanForce: true,
+			wantIsDev:    true,
+		},
+		{
+			name: "user signature with path tokens can create auto cleanup candidate",
+			process: model.Process{
+				PID:      2004,
+				PPID:     1,
+				Name:     "go",
+				Cmdline:  "go run ./cmd/server",
+				CWD:      "/Users/me/self/app",
+				IsOrphan: true,
+			},
+			wantDecision: model.CleanupAuto,
+			wantCanForce: true,
+			wantIsDev:    true,
+		},
+		{
+			name: "ignore dir wins over user signature",
+			process: model.Process{
+				PID:      2002,
+				PPID:     1,
+				Name:     "air",
+				Cmdline:  "air -c .air.toml",
+				CWD:      "/Users/me/self/ignored",
+				IsOrphan: true,
+			},
+			wantDecision: model.CleanupIgnored,
+			wantCanForce: false,
+			wantIsDev:    false,
+		},
+		{
+			name: "hard blocked runtime cannot be unlocked by user signature",
+			process: model.Process{
+				PID:      2003,
+				PPID:     1,
+				Name:     "opencode",
+				Cmdline:  "/opt/homebrew/bin/opencode run",
+				CWD:      "/Users/me/self/app",
+				IsOrphan: true,
+			},
+			wantDecision: model.CleanupBlocked,
+			wantCanForce: false,
+			wantIsDev:    false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := tt.process
+			s.classifyProcess(&got)
+			if got.CleanupDecision != tt.wantDecision {
+				t.Fatalf("CleanupDecision = %q, want %q; process: %#v", got.CleanupDecision, tt.wantDecision, got)
+			}
+			if got.CanForceCleanup != tt.wantCanForce {
+				t.Fatalf("CanForceCleanup = %v, want %v; process: %#v", got.CanForceCleanup, tt.wantCanForce, got)
+			}
+			if got.IsDev != tt.wantIsDev {
+				t.Fatalf("IsDev = %v, want %v; process: %#v", got.IsDev, tt.wantIsDev, got)
+			}
+		})
+	}
+}
+
 func TestCommandMatchesSignatureIsTokenAware(t *testing.T) {
 	tests := []struct {
 		name    string

@@ -1,16 +1,16 @@
 # Porttidy SSOT
 
 > Status: v0.1 product contract  
-> Scope: macOS-first CLI for safe cleanup of abandoned local dev servers  
+> Scope: macOS-first CLI for policy-aware cleanup of abandoned local dev servers  
 > Last updated: 2026-05-31
 
 ## 1. Product Thesis
 
-Porttidy helps AI-heavy developers safely clean up abandoned local dev servers after coding-agent sessions.
+Porttidy helps AI-heavy developers clean up abandoned local dev servers after coding-agent sessions using hard safety guardrails plus user-controlled cleanup policy.
 
 It is not a general process manager, not a desktop app, and not a prettier wrapper around `lsof`. Its reason to exist is narrower:
 
-> Make automated cleanup trustworthy enough to run at the end of an AI coding session.
+> Make automated cleanup trustworthy and policy-aware enough to run at the end of an AI coding session.
 
 The product wins by being conservative, explainable, and easy to embed in scripts or agent hooks. It loses if it tries to become a full lifecycle manager before users trust its process classification.
 
@@ -36,7 +36,7 @@ The user problem is not "how do I kill a port?"
 
 The real problem is:
 
-> After an AI coding session, the user cannot quickly tell which local dev servers are safe to clean up.
+> After an AI coding session, the user cannot quickly tell which local dev servers should be auto-cleaned, reviewed, or ignored.
 
 Manual commands can find processes, but they do not answer the risk questions:
 
@@ -49,7 +49,7 @@ Porttidy should replace that judgment burden, not just shorten a command.
 
 ## 4. Positioning
 
-Porttidy is a safe cleanup primitive for AI-native local development workflows.
+Porttidy is a policy-aware cleanup primitive for AI-native local development workflows.
 
 It should be:
 
@@ -95,7 +95,7 @@ Safety beats coverage.
 Explanation beats magic.
 
 - Each matched process should expose why it was matched.
-- Each kill target should expose why it is considered safe.
+- Each kill target should expose why it is eligible for auto cleanup.
 - JSON output is part of the product contract, not an afterthought.
 
 Automation beats UI.
@@ -110,7 +110,13 @@ Small beats broad.
 
 ## 7. Safety Model
 
-Every discovered process should be classified into one of three safety levels:
+Porttidy separates hard safety guardrails from user cleanup policy.
+
+Hard guardrails answer: "Must this process never be killed by normal cleanup?"
+
+User policy answers: "Given it is not hard-blocked, should this process be auto-cleaned, shown for review, or ignored?"
+
+Every discovered process keeps a compatibility `safety_level` and also exposes a policy-level `cleanup_decision`.
 
 | Level | Meaning | v0.1 behavior |
 | --- | --- | --- |
@@ -118,7 +124,16 @@ Every discovered process should be classified into one of three safety levels:
 | `needs_confirmation` | Likely relevant, but not safe enough for automation | Show to user, never force-kill by default |
 | `blocked` | System app, editor, current shell, current agent, or unknown risk | Never kill |
 
-v0.1 automatic cleanup must only target `safe_to_cleanup`.
+Cleanup decisions:
+
+| Decision | Meaning | v0.1 behavior |
+| --- | --- | --- |
+| `auto_cleanup` | Matches cleanup policy and hard guardrails | Eligible for `cleanup --force` |
+| `ask_first` | Looks relevant but lacks enough evidence or policy confidence | Show for review, never force-kill by default |
+| `blocked` | Hard-blocked by system/app/runtime protection | Never clean |
+| `ignored` | Excluded by user policy | Do not show as normal cleanup candidate |
+
+v0.1 automatic cleanup must only target `cleanup_decision=auto_cleanup`.
 
 ### 7.1 `safe_to_cleanup`
 
@@ -159,6 +174,12 @@ Examples:
 
 Blocked processes may appear in verbose diagnostics but should not appear as normal cleanup candidates.
 
+### 7.4 `ignored`
+
+A process is `ignored` when it is under an `ignore_dirs` policy entry. This is user preference, not a hard safety block.
+
+Ignored processes should not appear as normal cleanup candidates and must not be force-cleaned.
+
 ## 8. Detection Rules
 
 Detection should be specific enough to avoid accidental matches.
@@ -189,6 +210,8 @@ Risky signatures that should not alone classify a process as safe:
 - `ts-node`
 
 These broad runtime names can help explain ancestry or context, but they should not be enough to make a process killable.
+
+User policy can add project-specific signatures through `user_signatures`. These signatures extend cleanup policy but do not override hard blocks for editors, browsers, terminals, system helpers, or coding-agent runtimes.
 
 ## 9. CLI Contract
 
@@ -225,11 +248,11 @@ Useful flags:
 
 ### 9.2 `cleanup`
 
-Purpose: clean up only safe abandoned dev servers.
+Purpose: clean up only abandoned dev servers that pass hard guardrails and match the user's auto-cleanup policy.
 
 Expected default:
 
-- Target only `safe_to_cleanup`.
+- Target only `cleanup_decision=auto_cleanup`.
 - Support `--dry-run` as the recommended first run.
 - Support `--force` for automation hooks.
 - Never force-kill `needs_confirmation` or `blocked` processes.
@@ -274,6 +297,8 @@ Each process should eventually include:
   "ports": [5173],
   "is_orphan": true,
   "safety_level": "safe_to_cleanup",
+  "cleanup_decision": "auto_cleanup",
+  "can_force_cleanup": true,
   "match_reason": "matched specific dev-server signature: vite",
   "orphan_reason": "ppid=1",
   "blocked_reason": ""
@@ -318,11 +343,18 @@ target_dirs:
   - ~/self
   - ~/daas
 
+ignore_dirs:
+  - ~/self/critical-demo
+
 dev_signatures:
   - vite
   - next dev
   - astro dev
   - python -m http.server
+
+user_signatures:
+  - air
+  - go run ./cmd/server
 
 denylist:
   - Code

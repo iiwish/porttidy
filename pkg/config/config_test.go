@@ -29,6 +29,33 @@ denylist:
 	}
 }
 
+func TestLoadExpandsIgnoreDirsAndKeepsUserSignatures(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "porttidy.yaml")
+	if err := os.WriteFile(path, []byte(`
+target_dirs:
+  - ~/work
+ignore_dirs:
+  - ~/work/critical
+user_signatures:
+  - air
+`), 0644); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	cfg, err := Load(path)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	wantIgnore := filepath.Join(os.Getenv("HOME"), "work", "critical")
+	if len(cfg.IgnoreDirs) != 1 || cfg.IgnoreDirs[0] != wantIgnore {
+		t.Fatalf("IgnoreDirs = %#v, want [%q]", cfg.IgnoreDirs, wantIgnore)
+	}
+	if len(cfg.UserSignatures) != 1 || cfg.UserSignatures[0] != "air" {
+		t.Fatalf("UserSignatures = %#v, want [air]", cfg.UserSignatures)
+	}
+}
+
 func TestMergeUniqueKeepsOrderAndRemovesDuplicates(t *testing.T) {
 	got := mergeUnique([]string{"Code", "Codex"}, []string{"Codex", "Custom"})
 	want := []string{"Code", "Codex", "Custom"}

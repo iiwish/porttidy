@@ -107,6 +107,10 @@ func (k *Killer) validateTarget(p model.Process) string {
 		return "process safety level is not safe_to_cleanup"
 	}
 
+	if !k.allowUnsafe && p.CleanupDecision != "" && p.CleanupDecision != model.CleanupAuto {
+		return "process cleanup decision is not auto_cleanup"
+	}
+
 	if p.IsSystem {
 		return "process is marked as system app"
 	}

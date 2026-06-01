@@ -26,6 +26,7 @@ func TestPrintJSONIncludesAgentContractFields(t *testing.T) {
 						IsDev:           true,
 						IsOrphan:        true,
 						SafetyLevel:     model.SafetySafeToCleanup,
+						CleanupDecision: model.CleanupAuto,
 						CanForceCleanup: true,
 						MatchReason:     "matched specific dev-server signature: vite",
 						OrphanReason:    "ppid=1",
@@ -52,6 +53,7 @@ func TestPrintJSONIncludesAgentContractFields(t *testing.T) {
 		Projects []struct {
 			Processes []struct {
 				SafetyLevel     string `json:"safety_level"`
+				CleanupDecision string `json:"cleanup_decision"`
 				CanForceCleanup bool   `json:"can_force_cleanup"`
 				MatchReason     string `json:"match_reason"`
 				OrphanReason    string `json:"orphan_reason"`
@@ -72,6 +74,9 @@ func TestPrintJSONIncludesAgentContractFields(t *testing.T) {
 	proc := decoded.Projects[0].Processes[0]
 	if proc.SafetyLevel != model.SafetySafeToCleanup {
 		t.Fatalf("safety_level = %q, want %q", proc.SafetyLevel, model.SafetySafeToCleanup)
+	}
+	if proc.CleanupDecision != model.CleanupAuto {
+		t.Fatalf("cleanup_decision = %q, want %q", proc.CleanupDecision, model.CleanupAuto)
 	}
 	if !proc.CanForceCleanup {
 		t.Fatal("can_force_cleanup = false, want true")

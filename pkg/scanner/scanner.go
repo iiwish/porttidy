@@ -197,6 +197,7 @@ func (s *Scanner) classifyProcess(info *model.Process) {
 	info.IsDev = false
 	info.CanForceCleanup = false
 	info.SafetyLevel = model.SafetyBlocked
+	info.CleanupDecision = model.CleanupBlocked
 	info.MatchReason = ""
 	info.BlockedReason = ""
 
@@ -216,10 +217,17 @@ func (s *Scanner) classifyProcess(info *model.Process) {
 		return
 	}
 
+	if s.isIgnoredDir(info.CWD) {
+		info.CleanupDecision = model.CleanupIgnored
+		info.BlockedReason = "ignored by user policy"
+		return
+	}
+
 	matched, reason := s.matchDevProcess(*info)
 	if !matched {
 		if isBroadRuntime(*info) {
 			info.SafetyLevel = model.SafetyNeedsConfirm
+			info.CleanupDecision = model.CleanupAsk
 			info.MatchReason = "broad runtime without specific dev-server signature"
 			return
 		}
@@ -231,11 +239,13 @@ func (s *Scanner) classifyProcess(info *model.Process) {
 	info.MatchReason = reason
 	if info.IsOrphan {
 		info.SafetyLevel = model.SafetySafeToCleanup
+		info.CleanupDecision = model.CleanupAuto
 		info.CanForceCleanup = true
 		return
 	}
 
 	info.SafetyLevel = model.SafetyNeedsConfirm
+	info.CleanupDecision = model.CleanupAsk
 }
 
 func (s *Scanner) isDevProcess(info model.Process) bool {
@@ -260,7 +270,20 @@ func (s *Scanner) matchDevProcess(info model.Process) (bool, string) {
 			return true, "matched specific dev-server signature: " + sig
 		}
 	}
+	for _, sig := range s.cfg.UserSignatures {
+		sig = strings.TrimSpace(strings.ToLower(sig))
+		if sig == "" {
+			continue
+		}
+		if commandMatchesSignature(info.Cmdline, sig) {
+			return true, "matched user cleanup signature: " + sig
+		}
+	}
 	return false, ""
+}
+
+func (s *Scanner) isIgnoredDir(cwd string) bool {
+	return pathutil.AnyContains(s.cfg.IgnoreDirs, cwd)
 }
 
 func isShellWrapper(name string) bool {
@@ -358,7 +381,7 @@ func commandMatchesSignature(cmdline, sig string) bool {
 		return false
 	}
 
-	sigTokens := strings.Fields(strings.ToLower(sig))
+	sigTokens := commandTokens(sig)
 	if len(sigTokens) == 0 {
 		return false
 	}

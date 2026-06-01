@@ -15,6 +15,8 @@
 - [x] Make `kill --all` an expert path, not the default product path.
 - [x] Add killer-level pre-signal checks for self/parent, system process flags, and safe cleanup fields.
 - [x] Re-read process cwd before signaling and verify it is still inside target dirs.
+- [x] Separate hard guardrails from user cleanup policy with `cleanup_decision`.
+- [x] Add `user_signatures` and `ignore_dirs` policy controls.
 
 ### P1 - Classification Quality
 

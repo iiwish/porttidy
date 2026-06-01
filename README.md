@@ -1,8 +1,8 @@
 # Porttidy
 
-Safe cleanup for AI-started local dev servers.
+Policy-aware cleanup for AI-started local dev servers.
 
-Porttidy is a small CLI for developers who use coding agents and often end up with abandoned local dev servers. It scans configured development directories, identifies likely dev-server processes, and helps clean up only the ones that are safe enough to touch.
+Porttidy is a small CLI for developers who use coding agents and often end up with abandoned local dev servers. It scans configured development directories, applies hard guardrails, then uses your cleanup policy to decide what can be auto-cleaned, what should be reviewed, and what should be ignored.
 
 It is intentionally not a desktop app, process dashboard, or generic port killer.
 
@@ -10,9 +10,9 @@ It is intentionally not a desktop app, process dashboard, or generic port killer
 
 `lsof`, `kill-port`, `fkill`, and Activity Monitor can find and kill processes. They do not reliably answer the question that matters after an AI coding session:
 
-> Is this local dev server safe to clean up automatically?
+> Should this local dev server be auto-cleaned, reviewed, or ignored?
 
-Porttidy exists to make that judgment conservative and scriptable.
+Porttidy exists to make that judgment conservative, explainable, and scriptable.
 
 ## Usage
 
@@ -99,11 +99,18 @@ target_dirs:
   - ~/self
   - ~/daas
 
+ignore_dirs:
+  - ~/self/critical-demo
+
 dev_signatures:
   - vite
   - next dev
   - astro dev
   - python -m http.server
+
+user_signatures:
+  - air
+  - go run ./cmd/server
 
 denylist:
   - Code
@@ -115,6 +122,8 @@ denylist:
   - Docker Desktop
   - Codex
 ```
+
+Built-in denylist entries are always preserved. User config can extend cleanup policy, but ordinary config cannot unlock protected apps, terminals, browsers, system helpers, or coding-agent runtimes.
 
 ## Development
 

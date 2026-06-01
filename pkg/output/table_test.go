@@ -18,13 +18,13 @@ func TestSafetyLabel(t *testing.T) {
 	}{
 		{
 			name: "safe cleanup",
-			p:    model.Process{SafetyLevel: model.SafetySafeToCleanup},
-			want: "safe",
+			p:    model.Process{CleanupDecision: model.CleanupAuto, SafetyLevel: model.SafetySafeToCleanup},
+			want: "auto",
 		},
 		{
 			name: "needs confirmation",
-			p:    model.Process{SafetyLevel: model.SafetyNeedsConfirm},
-			want: "check",
+			p:    model.Process{CleanupDecision: model.CleanupAsk, SafetyLevel: model.SafetyNeedsConfirm},
+			want: "ask",
 		},
 		{
 			name: "blocked",
@@ -34,7 +34,7 @@ func TestSafetyLabel(t *testing.T) {
 		{
 			name: "legacy safe fallback",
 			p:    model.Process{CanForceCleanup: true},
-			want: "safe",
+			want: "auto",
 		},
 	}
 
@@ -82,17 +82,19 @@ func TestPrintTableIncludesSafetyAndReason(t *testing.T) {
 						Cmdline:         "node /Users/me/self/app/node_modules/.bin/vite --port 5173",
 						Ports:           []int{5173},
 						SafetyLevel:     model.SafetySafeToCleanup,
+						CleanupDecision: model.CleanupAuto,
 						CanForceCleanup: true,
 						MatchReason:     "matched specific dev-server signature: vite",
 						OrphanReason:    "ppid=1",
 					},
 					{
-						PID:         1002,
-						CWD:         "/Users/me/self/app",
-						Cmdline:     "node /Users/me/self/app/node_modules/.bin/vite --port 5174",
-						Ports:       []int{5174},
-						SafetyLevel: model.SafetyNeedsConfirm,
-						MatchReason: "matched specific dev-server signature: vite",
+						PID:             1002,
+						CWD:             "/Users/me/self/app",
+						Cmdline:         "node /Users/me/self/app/node_modules/.bin/vite --port 5174",
+						Ports:           []int{5174},
+						SafetyLevel:     model.SafetyNeedsConfirm,
+						CleanupDecision: model.CleanupAsk,
+						MatchReason:     "matched specific dev-server signature: vite",
 					},
 				},
 			},
@@ -104,7 +106,7 @@ func TestPrintTableIncludesSafetyAndReason(t *testing.T) {
 		PrintTable(result)
 	})
 
-	for _, want := range []string{"State", "Reason", "safe", "check", "vite; ppid=1"} {
+	for _, want := range []string{"State", "Reason", "auto", "ask", "vite; ppid=1"} {
 		if !strings.Contains(got, want) {
 			t.Fatalf("PrintTable output did not contain %q:\n%s", want, got)
 		}

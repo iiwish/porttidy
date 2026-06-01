@@ -34,9 +34,11 @@ var DefaultDenylist = []string{
 
 // Config holds porttidy configuration
 type Config struct {
-	TargetDirs    []string `yaml:"target_dirs"`
-	DevSignatures []string `yaml:"dev_signatures"`
-	Denylist      []string `yaml:"denylist"`
+	TargetDirs     []string `yaml:"target_dirs"`
+	IgnoreDirs     []string `yaml:"ignore_dirs"`
+	DevSignatures  []string `yaml:"dev_signatures"`
+	UserSignatures []string `yaml:"user_signatures"`
+	Denylist       []string `yaml:"denylist"`
 }
 
 // DefaultConfig returns the default configuration
@@ -46,8 +48,10 @@ func DefaultConfig() *Config {
 			filepath.Join(os.Getenv("HOME"), "daas"),
 			filepath.Join(os.Getenv("HOME"), "self"),
 		},
-		DevSignatures: DefaultDevSignatures,
-		Denylist:      DefaultDenylist,
+		IgnoreDirs:     []string{},
+		DevSignatures:  DefaultDevSignatures,
+		UserSignatures: []string{},
+		Denylist:       DefaultDenylist,
 	}
 }
 
@@ -97,12 +101,8 @@ func Load(path string) (*Config, error) {
 		cfg.Denylist = mergeUnique(DefaultDenylist, cfg.Denylist)
 	}
 
-	// Expand ~ to $HOME
-	for i, dir := range cfg.TargetDirs {
-		if dir == "~" || (len(dir) > 0 && dir[0] == '~') {
-			cfg.TargetDirs[i] = filepath.Join(os.Getenv("HOME"), dir[1:])
-		}
-	}
+	expandDirs(cfg.TargetDirs)
+	expandDirs(cfg.IgnoreDirs)
 
 	return &cfg, nil
 }
@@ -143,4 +143,12 @@ func mergeUnique(base, extra []string) []string {
 	}
 
 	return merged
+}
+
+func expandDirs(dirs []string) {
+	for i, dir := range dirs {
+		if dir == "~" || (len(dir) > 0 && dir[0] == '~') {
+			dirs[i] = filepath.Join(os.Getenv("HOME"), dir[1:])
+		}
+	}
 }

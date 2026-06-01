@@ -8,6 +8,13 @@ const (
 	SafetyBlocked       = "blocked"
 )
 
+const (
+	CleanupAuto    = "auto_cleanup"
+	CleanupAsk     = "ask_first"
+	CleanupBlocked = "blocked"
+	CleanupIgnored = "ignored"
+)
+
 // Process represents a single system process
 type Process struct {
 	PID             int       `json:"pid"`
@@ -21,6 +28,7 @@ type Process struct {
 	IsOrphan        bool      `json:"is_orphan"`
 	IsSystem        bool      `json:"is_system"`
 	SafetyLevel     string    `json:"safety_level"`
+	CleanupDecision string    `json:"cleanup_decision"`
 	CanForceCleanup bool      `json:"can_force_cleanup"`
 	MatchReason     string    `json:"match_reason,omitempty"`
 	OrphanReason    string    `json:"orphan_reason,omitempty"`

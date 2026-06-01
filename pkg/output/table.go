@@ -95,16 +95,27 @@ func ShortenCmd(cmd string, max int) string {
 
 // SafetyLabel returns the compact display label for a process safety level.
 func SafetyLabel(p model.Process) string {
+	switch p.CleanupDecision {
+	case model.CleanupAuto:
+		return "auto"
+	case model.CleanupAsk:
+		return "ask"
+	case model.CleanupIgnored:
+		return "ignored"
+	case model.CleanupBlocked:
+		return "blocked"
+	}
+
 	switch p.SafetyLevel {
 	case model.SafetySafeToCleanup:
-		return "safe"
+		return "auto"
 	case model.SafetyNeedsConfirm:
-		return "check"
+		return "ask"
 	case model.SafetyBlocked:
 		return "blocked"
 	default:
 		if p.CanForceCleanup {
-			return "safe"
+			return "auto"
 		}
 		if p.IsOrphan {
 			return "orphan"
@@ -137,6 +148,7 @@ func ProcessReason(p model.Process) string {
 
 func trimReasonPrefix(reason string) string {
 	reason = strings.TrimPrefix(reason, "matched specific dev-server signature: ")
+	reason = strings.TrimPrefix(reason, "matched user cleanup signature: ")
 	reason = strings.TrimPrefix(reason, "broad runtime without specific dev-server signature")
 	if reason == "" {
 		return "broad runtime"

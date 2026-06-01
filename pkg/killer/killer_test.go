@@ -73,6 +73,7 @@ func TestValidateTargetSafety(t *testing.T) {
 			process: model.Process{
 				PID:             1234,
 				SafetyLevel:     model.SafetySafeToCleanup,
+				CleanupDecision: model.CleanupAuto,
 				CanForceCleanup: true,
 			},
 		},
@@ -82,9 +83,21 @@ func TestValidateTargetSafety(t *testing.T) {
 			process: model.Process{
 				PID:             1234,
 				SafetyLevel:     model.SafetyNeedsConfirm,
+				CleanupDecision: model.CleanupAsk,
 				CanForceCleanup: false,
 			},
 			wantErrSub: "not marked safe",
+		},
+		{
+			name:  "ignored decision fails even if legacy safe fields are set",
+			allow: false,
+			process: model.Process{
+				PID:             1234,
+				SafetyLevel:     model.SafetySafeToCleanup,
+				CleanupDecision: model.CleanupIgnored,
+				CanForceCleanup: true,
+			},
+			wantErrSub: "not auto_cleanup",
 		},
 		{
 			name:  "system process fails even in unsafe mode",
